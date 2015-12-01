@@ -176,8 +176,8 @@ test_dir(Opts, Name) ->
     ResultsDirAbs = filename:absname(ResultsDir),
     TestDir = filename:join([ResultsDirAbs, Name]),
     {ok, TestDir} = {filelib:ensure_dir(filename:join(TestDir, "foobar")), TestDir},
-    Link = filename:join([ResultsDir, "current"]),
-    [] = os:cmd(?FMT("rm -f ~s; ln -sf ~s ~s", [Link, TestDir, Link])),
+    %% Link = filename:join([ResultsDir, "current"]),
+    %% [] = os:cmd(?FMT("rm -f ~s; ln -sf ~s ~s", [Link, TestDir, Link])),
     TestDir.
 
 wait_for_stop(Mref, infinity) ->
