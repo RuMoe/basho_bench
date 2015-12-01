@@ -27,19 +27,7 @@
 %% ====================================================================
 
 new(Id) ->
-
     Nodes   = basho_bench_config:get(scalarisclient_nodes),
-    MyNode  = basho_bench_config:get(scalarisclient_mynode),
-
-    %% Try to spin up net_kernel
-    case net_kernel:start(MyNode) of
-        {ok, _} ->
-            ?INFO("Net kernel started as ~p\n", [node()]);
-        {error, {already_started, _}} ->
-            ok;
-        {error, Reason} ->
-            ?FAIL_MSG("Failed to start net_kernel for ~p: ~p\n", [?MODULE, Reason])
-    end,
 
     %% Try to ping each of the nodes
     ping_each(Nodes, Id),
