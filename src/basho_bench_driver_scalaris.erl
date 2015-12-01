@@ -29,7 +29,6 @@
 new(Id) ->
 
     Nodes   = basho_bench_config:get(scalarisclient_nodes),
-    Cookie  = basho_bench_config:get(scalarisclient_cookie),
     MyNode  = basho_bench_config:get(scalarisclient_mynode),
 
     %% Try to spin up net_kernel
@@ -41,9 +40,6 @@ new(Id) ->
         {error, Reason} ->
             ?FAIL_MSG("Failed to start net_kernel for ~p: ~p\n", [?MODULE, Reason])
     end,
-
-        %% Initialize cookie for each of the nodes
-    [true = erlang:set_cookie(N, Cookie) || N <- Nodes],
 
     %% Try to ping each of the nodes
     ping_each(Nodes),
