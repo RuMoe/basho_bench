@@ -143,7 +143,7 @@ maybe_net_node(Opts) ->
             {_, Cookie} = lists:keyfind(net_cookie, 1, Opts),
             os:cmd("epmd -daemon"),
             net_kernel:start([Node, longnames]),
-            erlang:set_cookie(Node, Cookie),
+            erlang:set_cookie(node(), Cookie),
             ok;
         false ->
             ok
