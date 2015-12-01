@@ -42,7 +42,7 @@ new(Id) ->
     end,
 
     %% Try to ping each of the nodes
-    ping_each(Nodes),
+    ping_each(Nodes, Id),
 
     %% Choose the node using our ID as a modulus
     TargetNode = lists:nth((Id rem length(Nodes)+1), Nodes),
@@ -92,12 +92,14 @@ run(delete, KeyGen, _ValueGen, State) ->
 %% Internal functions
 %% ====================================================================
 
-ping_each([]) ->
+ping_each([], _Id) ->
     ok;
-ping_each([Node | Rest]) ->
+ping_each([Node | Rest], Id) ->
     case net_adm:ping(Node) of
         pong ->
-            ping_each(Rest);
+            %% ?INFO("Pinging node ~w. Cookie: ~w\n", [Node, erlang:get_cookie()]),
+            ping_each(Rest, Id);
         pang ->
-            ?FAIL_MSG("Failed to ping node ~p\n", [Node])
+            %% ?WARN("Cookie: ~w\n", [erlang:get_cookie()]),
+            ?FAIL_MSG("Worker ~w failed to ping node ~p\n", [Id, Node])
     end.
