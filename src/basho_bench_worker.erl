@@ -345,7 +345,7 @@ max_worker_run_loop(State) ->
 rate_worker_run_loop(State, Lambda) ->
     %% Delay between runs using exponentially distributed delays to mimic
     %% queue.
-    timer:sleep(trunc(basho_bench_stats:exponential(Lambda))),
+    timer:sleep(round(basho_bench_stats:exponential(Lambda))),
     case worker_next_op(State) of
         {ok, State2} ->
             case needs_shutdown(State2) of
