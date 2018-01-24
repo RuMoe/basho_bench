@@ -3,7 +3,7 @@ REPO            ?= basho_bench
 PKG_REVISION    ?= $(shell git describe --tags)
 PKG_VERSION     ?= $(shell git describe --tags | tr - .)
 PKG_ID           = basho-bench-$(PKG_VERSION)
-PKG_BUILD        = 1
+PKG_BUILD        = 2
 BASE_DIR         = $(shell pwd)
 ERLANG_BIN       = $(shell dirname $(shell which erl))
 REBAR           ?= $(BASE_DIR)/rebar
@@ -37,7 +37,7 @@ locked-deps:
 compile: deps
 	# Temp hack to work around https://github.com/basho/riak-erlang-client/issues/151
 	(cd deps/riak_pb ; ./rebar clean compile deps_dir=..)
-	@(./rebar compile)
+	@(./rebar -k compile)
 
 clean:
 	@./rebar clean
