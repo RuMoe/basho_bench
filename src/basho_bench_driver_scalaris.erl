@@ -45,7 +45,7 @@ new(Id) ->
 
 run(get, KeyGen, _ValueGen, State) ->
     Key = KeyGen(),
-    case rpc:call(State, api_tx, read, [Key]) of
+    case rpc:call(State, basho_bench_on_cseq, read, [Key]) of
         {ok, _Value} ->
             {ok, State};
         {fail, not_found} ->
@@ -54,7 +54,7 @@ run(get, KeyGen, _ValueGen, State) ->
 run(put, KeyGen, ValueGen, State) ->
     Key = KeyGen(),
     Value = ValueGen(),
-    case rpc:call(State, api_tx, write, [Key, Value]) of
+    case rpc:call(State, basho_bench_on_cseq, write, [Key, Value]) of
         {ok} ->
             {ok, State};
         Error ->
