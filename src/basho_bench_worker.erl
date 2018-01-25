@@ -53,10 +53,10 @@
 %% ====================================================================
 
 start_link(SupChild, Id) ->
-    case basho_bench_config:get(distribute_work, false) of 
-        true -> 
+    case basho_bench_config:get(distribute_work, false) of
+        true ->
             start_link_distributed(SupChild, Id);
-        false -> 
+        false ->
             start_link_local(SupChild, Id)
     end.
 
@@ -99,7 +99,9 @@ init([SupChild, Id]) ->
 
     %% Pull all config settings from environment
     Driver  = basho_bench_config:get(driver),
-    Ops     = ops_tuple(),
+    Ops     = ops_tuple(Id),
+
+    ?DEBUG("Worker with ID ~p uses ops ~p", [Id, Ops]),
     ShutdownOnError = basho_bench_config:get(shutdown_on_error, false),
 
     %% Finally, initialize key and value generation. We pass in our ID to the
@@ -198,16 +200,32 @@ stop_worker(SupChild) ->
 %%
 %% Expand operations list into tuple suitable for weighted, random draw
 %%
-ops_tuple() ->
+ops_tuple(Id) ->
     F =
         fun({OpTag, Count}) ->
                 lists:duplicate(Count, {OpTag, OpTag});
            ({Label, OpTag, Count}) ->
                 lists:duplicate(Count, {Label, OpTag})
         end,
-    Ops = [F(X) || X <- basho_bench_config:get(operations, [])],
-    list_to_tuple(lists:flatten(Ops)).
 
+    ListOfOps = basho_bench_config:get(operations, []),
+    UsedList =
+        case hd(ListOfOps) of
+            {Count, OpList} when is_integer(Count) andalso is_list(OpList) ->
+                % definition of heterogenious worker behaviour if multiple operation
+                % lists were passed into config
+                Expanded = lists:map(fun({Count, X}) -> lists:duplicate(Count, X) end,
+                                     ListOfOps),
+                ListOfOpLists = lists:append(Expanded),
+                case length(ListOfOpLists) < Id of
+                   true -> lists:last(ListOfOpLists);
+                   false -> lists:nth(Id,ListOfOpLists)
+                end;
+            _ -> % unchanged default
+                ListOfOps
+    end,
+    Ops = [F(X) || X <- UsedList],
+    list_to_tuple(lists:flatten(Ops)).
 
 worker_init(State) ->
     %% Trap exits from linked parent process; use this to ensure the driver

@@ -98,7 +98,15 @@ init([]) ->
         fun({OpTag, _Count}) -> {OpTag, OpTag};
            ({Label, OpTag, _Count}) -> {Label, OpTag}
         end,
-    Ops = [F1(X) || X <- basho_bench_config:get(operations, [])],
+    OpList = case hd(basho_bench_config:get(operations, [])) of
+                {RCounter, _} when is_integer(RCounter) ->
+                    lists:flatten(lists:map(fun({_, WOps}) -> WOps end,
+                                            basho_bench_config:get(operations, [])));
+                _ -> basho_bench_config:get(operations, [])
+             end, 
+
+    Ops = lists:usort([F1(X) || X <- OpList]),
+    ?DEBUG("STATS OPS USED: ~p", [Ops]), 
 
     %% Get the list of measurements we'll be using for this test
     F2 =
