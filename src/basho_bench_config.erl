@@ -48,22 +48,22 @@
 %% ===================================================================
 
 %% Todo: ensure_started before calling on any gen_server APIs.
-ensure_started() -> 
+ensure_started() ->
     start_link().
 
 start_link() ->
-    gen_server:start_link({global, ?MODULE}, ?MODULE, [], []).
+    gen_server:start_link({global, name()}, ?MODULE, [], []).
 
 
 load(Files) ->
     ensure_started(),
-    gen_server:call({global, ?MODULE}, {load_files, Files}). 
-    
+    gen_server:call({global, name()}, {load_files, Files}).
+
 set(Key, Value) ->
-    gen_server:call({global, ?MODULE}, {set, Key, Value}).
+    gen_server:call({global, name()}, {set, Key, Value}).
 
 get(Key) ->
-    case gen_server:call({global, ?MODULE}, {get, Key}) of
+    case gen_server:call({global, name()}, {get, Key}) of
         {ok, Value} ->
             Value;
         undefined ->
@@ -71,7 +71,7 @@ get(Key) ->
     end.
 
 get(Key, Default) ->
-    case gen_server:call({global, ?MODULE}, {get, Key}) of
+    case gen_server:call({global, name()}, {get, Key}) of
         {ok, Value} ->
             Value;
         undefined ->
@@ -102,6 +102,7 @@ normalize_ips(IPs, DefultPort) ->
 %% Internal functions
 %% ===================================================================
 
+name() -> list_to_atom(atom_to_list(?MODULE) ++ atom_to_list(erlang:node())).
 
 normalize_ip_entry({IP, Ports}, Normalized, _) when is_list(Ports) ->
     [{IP, Port} || Port <- Ports] ++ Normalized;
@@ -115,14 +116,14 @@ normalize_ip_entry(IP, Normalized, DefaultPort) ->
 %% Gen_server Functions
 %% ===
 
--spec init(term()) -> {ok, state()}.  
+-spec init(term()) -> {ok, state()}.
 init(_Args) ->
     State = #basho_bench_config_state{},
     {ok, State}.
 
 -spec code_change(term(), state(), term()) -> {ok, state()}.
 code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.                                
+    {ok, State}.
 
 -spec terminate(term(), state()) -> 'ok'.
 terminate(_Reason, _State) ->
@@ -133,7 +134,7 @@ handle_call({load_files, FileNames}, _From, State) ->
     {reply, ok, State};
 
 handle_call({set, Key, Value}, _From, State) ->
-    application:set_env(basho_bench, Key, Value), 
+    application:set_env(basho_bench, Key, Value),
     {reply, ok, State};
 handle_call({get, Key}, _From, State) ->
     Value = application:get_env(basho_bench, Key),
@@ -146,7 +147,7 @@ handle_info(_Info, State) ->
     {noreply, State}.
 
 set_keys_from_files(Files) ->
-    KVs = [ 
+    KVs = [
     case file:consult(File) of
         {ok, Terms} ->
             Terms;
