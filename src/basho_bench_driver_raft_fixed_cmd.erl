@@ -15,7 +15,7 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
--module(basho_bench_driver_raft).
+-module(basho_bench_driver_raft_fixed_cmd).
 
 -export([new/1,
          run/4]).
@@ -52,9 +52,8 @@ run(get, _KeyGen, _ValueGen, State) ->
         {fail, not_found} ->
             {ok, State}
     end;
-run(put, _KeyGen, ValueGen, State) ->
-    Payload = ValueGen(),
-    case rpc:call(State, ?API_MODULE, inc, [Payload]) of
+run(put, _KeyGen, _ValueGen, State) ->
+    case rpc:call(State, ?API_MODULE, inc, []) of
         ok ->
             {ok, State};
         Error ->
