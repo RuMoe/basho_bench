@@ -15,7 +15,7 @@
 %% under the License.
 %%
 %% -------------------------------------------------------------------
--module(basho_bench_driver_scalaris_crdt).
+-module(basho_bench_driver_multi_paxos_fixed_cmd).
 
 -export([new/1,
          run/4]).
@@ -26,8 +26,10 @@
 %% API
 %% ====================================================================
 
+-define(API_MODULE, multi_paxos_console).
+
 new(Id) ->
-    Nodes = basho_bench_config:get(scalarisclient_nodes),
+    Nodes   = basho_bench_config:get(multi_paxos_client_nodes),
 
     %% Try to ping each of the nodes
     ping_each(Nodes, Id),
@@ -36,45 +38,35 @@ new(Id) ->
     TargetNode = lists:nth((Id rem length(Nodes)+1), Nodes),
     ?INFO("Using target node ~p for worker ~p\n", [TargetNode, Id]),
 
-    case rpc:call(TargetNode, api_vm, number_of_nodes, []) of
+    case rpc:call(TargetNode, ?API_MODULE, ensemble_status, [[]]) of
         {badrpc, _Reason} ->
             ?FAIL_MSG("Failed to connect to ~p: ~p\n", [TargetNode, _Reason]);
-        N when N > 0 ->
+        _ ->
+            ?INFO("INIT successfull", []),
             {ok, TargetNode}
     end.
 
-run(get, KeyGen, _ValueGen, State) ->
-    Key = KeyGen(),
-    case rpc:call(State, basho_bench_on_crdt_cseq, read, [Key]) of
+run(get, _KeyGen, _ValueGen, State) ->
+    Key = 11234, %KeyGen(),
+    case rpc:call(State, ?API_MODULE, read, [Key]) of
         {ok, _Value} ->
             {ok, State};
         {fail, not_found} ->
             {ok, State}
     end;
-run(put, KeyGen, ValueGen, State) ->
-    Key = KeyGen(),
-    Value = ValueGen(),
-    case rpc:call(State, basho_bench_on_crdt_cseq, write, [Key, Value]) of
+run(put, _KeyGen, _ValueGen, State) ->
+    Key = 11234, %KeyGen(),
+    case rpc:call(State, ?API_MODULE, inc, [Key]) of
         ok ->
             {ok, State};
         Error ->
-            ?INFO("Error ~p\n", [Error]),
             {error, Error, State}
     end;
-run(update, KeyGen, ValueGen, State) ->
-    Key = KeyGen(),
-    Value = ValueGen(),
-    run(put, fun() -> Key end, fun() -> Value end, State);
-run(delete, KeyGen, _ValueGen, State) ->
-    Key = KeyGen(),
-    case rpc:call(State, api_rdht, delete, [Key]) of
-        {ok, 4, [ok, ok, ok, ok]} ->
-            {ok, State};
-        {ok, 0, [undef, undef, undef, undef]} ->
-            {ok, State};
-        Error ->
-            {error, Error, State}
-    end.
+run(update, _KeyGen, _ValueGen, State) ->
+    %% we do everything via get and put, even though puts are updates...
+    {error, not_supported, State};
+run(delete, _KeyGen, _ValueGen, State) ->
+    {error, not_supported, State}.
 
 
 %% ====================================================================
@@ -86,9 +78,7 @@ ping_each([], _Id) ->
 ping_each([Node | Rest], Id) ->
     case net_adm:ping(Node) of
         pong ->
-            %% ?INFO("Pinging node ~w. Cookie: ~w\n", [Node, erlang:get_cookie()]),
             ping_each(Rest, Id);
         pang ->
-            %% ?WARN("Cookie: ~w\n", [erlang:get_cookie()]),
             ?FAIL_MSG("Worker ~w failed to ping node ~p\n", [Id, Node])
     end.

@@ -35,7 +35,8 @@ new(Id) ->
     ping_each(Nodes, Id),
 
     %% Choose the node using our ID as a modulus
-    TargetNode = lists:nth((Id rem length(Nodes)+1), Nodes),
+    %TargetNode = lists:nth((Id rem length(Nodes)+1), Nodes),
+    TargetNode = hd(Nodes),
     ?INFO("Using target node ~p for worker ~p\n", [TargetNode, Id]),
 
     case rpc:call(TargetNode, ?API_MODULE, ensemble_status, [[]]) of
@@ -46,7 +47,7 @@ new(Id) ->
             {ok, TargetNode}
     end.
 
-run(get, KeyGen, _ValueGen, State) ->
+run(get, _KeyGen, _ValueGen, State) ->
     Key = 11234, %KeyGen(),
     case rpc:call(State, ?API_MODULE, read, [Key]) of
         {ok, _Value} ->
@@ -54,9 +55,10 @@ run(get, KeyGen, _ValueGen, State) ->
         {fail, not_found} ->
             {ok, State}
     end;
-run(put, KeyGen, _ValueGen, State) ->
+run(put, _KeyGen, ValueGen, State) ->
     Key = 11234, %KeyGen(),
-    case rpc:call(State, ?API_MODULE, inc, [Key]) of
+    Payload = ValueGen(),
+    case rpc:call(State, ?API_MODULE, inc, [Key, Payload]) of
         ok ->
             {ok, State};
         Error ->

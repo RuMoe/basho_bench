@@ -33,7 +33,7 @@ new(Id) ->
     ping_each(Nodes, Id),
 
     %% Choose the node using our ID as a modulus
-    TargetNode = lists:nth((Id rem length(Nodes)+1), Nodes),
+    TargetNode = lists:nth((Id rem length(Nodes)) + 1, Nodes),
     ?INFO("Using target node ~p for worker ~p\n", [TargetNode, Id]),
 
     case rpc:call(TargetNode, api_vm, number_of_nodes, []) of

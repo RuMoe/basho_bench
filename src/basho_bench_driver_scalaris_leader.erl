@@ -43,13 +43,13 @@ new(Id) ->
             {ok, TargetNode}
     end.
 
-run(get, KeyGen, _ValueGen, State) ->
+run(get, KeyGen, ValueGen, State) ->
     Key = KeyGen(),
     case rpc:call(State, basho_bench_on_cseq, read, [Key]) of
         {ok, _Value} ->
             {ok, State};
         {fail, not_found} ->
-            {ok, State}
+            run(put, KeyGen, ValueGen, State)
     end;
 run(put, KeyGen, ValueGen, State) ->
     Key = KeyGen(),
